@@ -12,6 +12,7 @@ const path = require("path");
 const bcrypt = require("bcrypt");
 const session = require("express-session");
 const cors = require("cors");
+const { watch } = require("fs");
 
 const app = express();
 const PORT = 3001;
@@ -52,6 +53,8 @@ async function readUsers() {
     // TODO 1: 
     // Read usersFile using fs.readFile(...) 
     // Convert the JSON text into a JavaScript value using JSON.parse(...) 
+    const data = await fs.readFile(usersFile, "utf8");
+    return JSON.parse(data);
 }
 
 // Save the updated users array back to users.json. 
@@ -59,19 +62,25 @@ async function writeUsers(users) {
     // TODO 2: 
     // Convert users into nicely formatted JSON text using JSON.stringify(users, null, 2). 
     // Write the text to usersFile using fs.writeFile(...) 
+    const data = JSON.stringify(users, null, 2);
+    await fs.writeFile(usersFile);
 }
 
 // Read and parse watchlists.json. 
 async function readWatchlists() {
     // TODO 3: 
     // Read watchlistsFile and return the parsed JSON object. 
+    const data = await fs.readFile(watchlistsFile, "utf8");
+    return JSON.parse(data);
 }
 
 // Save the updated watchlists object.
 async function writeWatchlists(watchlists) {
     // TODO 4: 
     // Convert watchlists into nicely formatted JSON using JSON.stringify(watchlists, null, 2). 
-    // Write the watchlists object back to watchlistsFile. 
+    // Write the watchlists object back to watchlistsFile.
+    const data = JSON.stringify(watchlists, null, 2);
+    await fs.writeFile(watchlists, writeWatchlists);
 }
 
 // Return true only if the username matches the lab rules. 
@@ -80,6 +89,10 @@ function isValidUsername(username) {
     // Check that username exists. 
     // Check that it is 3 to 20 characters long. 
     // Check that it contains only letters and numbers. 
+    if (username.length >= 3 && username.length <= 20 && /^[a-zA-Z0-9]+$/.test(username)) {
+        return true;
+    }
+
 }
 
 // Return true only if the password matches the lab rules. 
@@ -87,7 +100,10 @@ function isValidPassword(password) {
     // TODO 6: 
     // Check that password exists. 
     // Check that it is at least 6 characters long. 
-    // Check that it contains at least one letter and one number. 
+    // Check that it contains at least one letter and one number.
+    if (password && password.length >= 6 && /[a-zA-Z]/.test(password) && /[0-9]/.test(password)) {
+        return true;
+    }
 }
 
 // This middleware protects routes that require login. 
