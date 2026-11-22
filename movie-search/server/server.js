@@ -63,7 +63,7 @@ async function writeUsers(users) {
     // Convert users into nicely formatted JSON text using JSON.stringify(users, null, 2). 
     // Write the text to usersFile using fs.writeFile(...) 
     const data = JSON.stringify(users, null, 2);
-    await fs.writeFile(usersFile);
+    await fs.writeFile(usersFile, data);
 }
 
 // Read and parse watchlists.json. 
@@ -80,8 +80,9 @@ async function writeWatchlists(watchlists) {
     // Convert watchlists into nicely formatted JSON using JSON.stringify(watchlists, null, 2). 
     // Write the watchlists object back to watchlistsFile.
     const data = JSON.stringify(watchlists, null, 2);
-    await fs.writeFile(watchlists, writeWatchlists);
+    await fs.writeFile(watchlistsFile, data);
 }
+
 
 // Return true only if the username matches the lab rules. 
 function isValidUsername(username) {
@@ -132,10 +133,37 @@ app.post("/api/register", async (req, res) => {
         // Validate username format with isValidUsername(...). 
         // Validate password format with isValidPassword(...). 
 
+        // TODO 7:
+        if (!username || !password) {
+            return res.status(400).json({ message: "Username and password are required." });
+        }
+
+        if (!isValidUsername(username)) {
+            return res.status(400).json({
+                message: "Username must be 3 to 20 characters and contain only letters and numbers.",
+            });
+        }
+
+        if (!isValidPassword(password)) {
+            return res.status(400).json({
+                message: "Password must be at least 6 characters and include at least one letter and one number.",
+            });
+        }
+
         const users = await readUsers();
         // TODO 8: 
         // Check whether the username already exists. 
         // If it exists, return status 400 with a clear JSON message. 
+        const toRegister = username;
+
+        const isRegistered = users.some(
+            (user) => user.username.toLowerCase() === toRegister.toLowerCase()
+        );
+
+        if (isRegistered) {
+            return res.status(400).json({ message: "Username already exists." });
+        }
+
 
         // bcrypt.hash(...) turns the plain password into a secure hash. 
         const passwordHash = await bcrypt.hash(password, 10);
@@ -144,12 +172,18 @@ app.post("/api/register", async (req, res) => {
         // Push the new user object into the users array. 
         // Use the keys exactly like this: { username, passwordHash }. 
         // Save users using writeUsers(...). 
+        users.push({ username, passwordHash });
+        await writeUsers(users);
+
 
         const watchlists = await readWatchlists();
 
         // TODO 10: 
         // Create an empty watchlist array for the new user. 
         // Save watchlists using writeWatchlists(...). 
+        watchlists[username] = [];
+        await writeWatchlists(watchlists);
+
 
         res.status(201).json({ message: "Registration successful." });
     } catch (error) {
@@ -167,6 +201,10 @@ app.post("/api/login", async (req, res) => {
 
         // TODO 11: 
         // Validate missing fields. 
+        if (!username || !password) {
+            return res.status(400).json({ message: "Username and password are required." });
+        }
+
 
         const users = await readUsers();
 
@@ -174,6 +212,11 @@ app.post("/api/login", async (req, res) => {
         // Create a variable named user using: 
         // const user = users.find((u) => u.username === username); 
         // If no user is found, return status 401. 
+        const user = users.find((u) => u.username === username);
+
+        if (!user) {
+            return res.status(401).json({ message: "Username not found" });
+        }
 
         // bcrypt.compare(...) checks the plain password against the stored hash. 
         const passwordMatches = await bcrypt.compare(password, user.passwordHash);
@@ -181,6 +224,9 @@ app.post("/api/login", async (req, res) => {
         // TODO 13: 
         // If the password does not match, return status 401. 
         // If it does match, save the username in req.session.username. 
+        if (!passwordMatches) {
+            req.session.username = user.username;
+        }
 
         res.json({ message: "Login successful.", username });
     } catch (error) {
