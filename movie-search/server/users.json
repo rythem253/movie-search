@@ -1,1 +1,10 @@
-[]
+[
+  {
+    "username": "wejifbwebfwo",
+    "passwordHash": "$2b$10$rVrJ1sEGlfOtYkwwz4mgJuXWDOOzwj669bO081s7e.SGUxKCYIyDi"
+  },
+  {
+    "username": "username",
+    "passwordHash": "$2b$10$pzaGZPgO3Rd2oL3y/SuWqu2Kruw0cvwC3bs.U4DUUTfK4qJE5Iqou"
+  }
+]

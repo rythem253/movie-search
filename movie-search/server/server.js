@@ -258,7 +258,8 @@ app.get("/api/watchlist", requireLogin, async (req, res) => {
         const username = req.session.username;
 
         // TODO 14: 
-        // Return the watchlist array for this user. 
+        // Return the watchlist array for this user.   
+        res.json(watchlists[username]);
         // If the user has no watchlist yet, return an empty array. 
     } catch (error) {
         res.status(500).json({ message: "Server error while reading watchlist." });
@@ -273,6 +274,9 @@ app.post("/api/watchlist", requireLogin, async (req, res) => {
         // TODO 15: 
         // Validate that movie.imdbID and movie.Title exist. 
         // Return status 400 if the movie object is incomplete. 
+        if (!movie || !movie.imdbID || !movie.Title) {
+            return res.status(400).json({ message: "Movie imdbID and Title are required." });
+        }
 
         const watchlists = await readWatchlists();
 
@@ -284,11 +288,18 @@ app.post("/api/watchlist", requireLogin, async (req, res) => {
         // TODO 16: 
         // Prevent duplicate movies by checking imdbID. 
         // If the movie already exists, return status 400. 
+        const alreadyExists = userWatchlist.some((m) => m.imdbID === movie.imdbID);
+
+        if (alreadyExists) {
+            return res.status(400).json({ message: "Movie is already in your watchlist." });
+        }
 
         // TODO 17: 
         // Add the movie to userWatchlist. 
         // Because userWatchlist refers to watchlists[username], saving watchlists will keep the new movie. 
         // Save the updated watchlists object. 
+        userWatchlist.push(movie);
+        await writeWatchlists(watchlists);
 
         res.status(201).json({ message: "Movie added to watchlist." });
     } catch (error) {
@@ -308,7 +319,9 @@ app.delete("/api/watchlist/:imdbID", requireLogin, async (req, res) => {
         // Create a new array that removes the movie whose imdbID matches req.params.imdbID. 
         // Assign that new array back to watchlists[username]. 
         // Save the updated watchlists object. 
-
+        watchlists[username] = userWatchlist.filter((m) => m.imdbID !== imdbID);
+        await writeWatchlists(watchlists);
+        
         res.json({ message: "Movie removed from watchlist." });
     } catch (error) {
         res.status(500).json({ message: "Server error while removing movie." });
